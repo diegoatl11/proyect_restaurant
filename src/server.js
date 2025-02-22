@@ -1,19 +1,26 @@
-const express = require('express');
-require('dotenv').config();
+const express = require("express");
+const cors = require("cors");
+const db = require("./config/db");
+require("dotenv").config();
+
 const app = express();
-const cors = require('cors');
-
-const authUserRouter = require('./routes/userRoutes');
-
-//
-
 app.use(express.json());
 app.use(cors());
 
-app.use('/api', authUserRouter);
+db.getConnection()
+  .then(() => console.log("✅ Conectado a la base de datos"))
+  .catch((err) =>
+    console.error("❌ Error en la conexión a la base de datos:", err)
+  );
 
+const authUserRouter = require("./routes/userRoutes");
+app.use("/api", authUserRouter);
+
+app.use((req, res) => {
+  res.status(404).json({ message: "Ruta no encontrada", code: "E404" });
+});
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-  console.log('Server is running on port ' + PORT);
+  console.log("Server is running on port " + PORT);
 });

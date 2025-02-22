@@ -1,5 +1,3 @@
-const { connect } = require("../config/db");
-
 const UserModel = {
     async registerUser(connection, username, email, password, phone, first_name, last_name, dni) {
         try {
@@ -11,17 +9,7 @@ const UserModel = {
             const userId = result[1][0].user_id;
             return { success: true, message: 'Usuario registrado con éxito', id: userId };
         } catch (error) {
-            return { success: false, message: error.sqlMessage || 'Error al registrar usuario' };
-        }
-    },
-
-    async validateUser(connection, email) {
-        try {
-            const [rows] = await connection.query('SELECT email_exists(?) AS exists_result', [email]);
-            return rows[0].exists_result;
-        } catch (error) {
-            console.error('Error al verificar el email:', error);
-            return 0;
+            throw new Error(error.sqlMessage || 'Error al registrar usuario');
         }
     },
 
@@ -40,15 +28,33 @@ const UserModel = {
         }
     },
 
-    async registerLogAccess(connection, userId, email, ip_address, user_agent, login_status) {
+    async getUserById(connection, userId) {
         try {
-            await connection.query('CALL REGISTER_ACCESS_LOG(?, ?, ?, ?, ?)', [userId, email, ip_address, user_agent, login_status]);
+            const [result] = await connection.query('CALL GET_USER_BY_ID(?)', [userId]);
+            return result[0];
         } catch (error) {
-            console.error('Error al registrar log de acceso:', error);
+            console.error('Error al obtener usuario por ID:', error);
+            return null;
+        }
+    },
 
+    async updateUser(connection, userId, username, email, phone, first_name, last_name, dni) {
+        try {
+            await connection.query('CALL UPDATE_USER(?, ?, ?, ?, ?, ?, ?)', [userId, username, email, phone, first_name, last_name, dni]);
+            return { success: true, message: 'Usuario actualizado con éxito' };
+        } catch (error) {
+            throw new Error(error.sqlMessage || 'Error al actualizar usuario');
+        }
+    },
+
+    async deleteUser(connection, userId) {
+        try {
+            await connection.query('CALL DELETE_USER(?)', [userId]);
+            return { success: true, message: 'Usuario eliminado con éxito' };
+        } catch (error) {
+            throw new Error(error.sqlMessage || 'Error al actualizar usuario');
         }
     }
-
 }
 
 module.exports = UserModel;
