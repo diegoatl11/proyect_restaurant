@@ -13,11 +13,11 @@ const UserModel = {
         }
     },
 
-    async checkEmailLogin(connection, email) {
+    async checkEmail(connection, email) {
         try {
 
-            await connection.query('CALL VALIDATE_EMAIL(?, @user_id, @password, @status)', [email]);
-            const [[result]] = await connection.execute('SELECT @user_id AS user_id, @password AS password, @status AS status');
+            await connection.query('CALL VALIDATE_EMAIL(?, @status)', [email]);
+            const [[result]] = await connection.execute('SELECT @status AS status');
 
             result.status = Boolean(result.status);
             return result;
@@ -28,12 +28,17 @@ const UserModel = {
         }
     },
 
-    async getUserById(connection, userId) {
+    async validateCredentials(connection, email) {
         try {
-            const [result] = await connection.query('CALL GET_USER_BY_ID(?)', [userId]);
-            return result[0];
+
+            await connection.query('CALL VALIDATE_CREDENTIALS(?, @user_id, @username, @password, @status)', [email]);
+            const [[result]] = await connection.execute('SELECT @user_id AS user_id, @username AS username, @password AS password, @status AS status');
+
+            result.status = Boolean(result.status);
+            return result;
+
         } catch (error) {
-            console.error('Error al obtener usuario por ID:', error);
+            console.error('Error al verificar el email:', error);
             return null;
         }
     },
@@ -53,6 +58,18 @@ const UserModel = {
             return { success: true, message: 'Usuario eliminado con éxito' };
         } catch (error) {
             throw new Error(error.sqlMessage || 'Error al actualizar usuario');
+        }
+    },
+
+    async getUserById(connection, userId) {
+        try {
+            const [rows] = await connection.query('CALL GET_USER_BY_ID(?)', [userId]);
+
+            const user = rows[0]?.[0] || null;
+
+            return { success: true, data: user, message: 'Usuario Encontrado' };
+        } catch (error) {
+            throw new Error(error.sqlMessage || 'Usuario No Encontrado ');
         }
     }
 }

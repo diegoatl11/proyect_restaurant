@@ -13,4 +13,8 @@ router.put("/authentication/update/:id", verifyToken, usercontroller.update);
 
 router.delete("/authentication/delete/:id", verifyToken, usercontroller.delete);
 
+router.post("/logout", verifyToken, usercontroller.logout);
+
+router.get("/authentication/getuserinfo", verifyToken, usercontroller.getUserInfo);
+
 module.exports = router;

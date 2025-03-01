@@ -1,6 +1,7 @@
 const userModel = require("../models/userModel");
 const accesModel = require("../models/accessModel");
 const userRolesModel = require("../models/userRolesModel");
+const roleModel = require("../models/rolesModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const db = require("../config/db");
@@ -19,7 +20,7 @@ module.exports = {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            const existingUser = await userModel.checkEmailLogin(connection, email);
+            const existingUser = await userModel.checkEmail(connection, email);
             if (existingUser.status) {
                 return res.status(401).json({ message: 'El correo ya está registrado', code: 'E002' });
             }
@@ -56,22 +57,39 @@ module.exports = {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            const result = await userModel.checkEmailLogin(connection, email);
+            const result = await userModel.validateCredentials(connection, email);
+
             if (!result.status) {
-                return res.status(401).json({ message: 'Correo no registrado', code: 'E002' });
+                return res.status(401).json({ message: 'Credenciales incorrectas. Inténtalo de nuevo.', code: 'E002' });
             }
 
             if (!await bcrypt.compare(password, result.password)) {
                 await accesModel.registerLogAccess(connection, result.user_id, email, req.ip, req.headers["user-agent"], "FAILED");
                 await connection.commit();
-                return res.status(401).json({ message: "Contraseña incorrecta", code: "E003" });
+                return res.status(401).json({ message: "Credenciales incorrectas. Inténtalo de nuevo.", code: "E002" });
             }
 
-            const token = jwt.sign({ id: result.user_id, email }, process.env.JWT_SECRET, { expiresIn: "2h" });
+
+
+            if (!email || !password) {
+                return res.status(400).json({ message: "Correo y contraseña son obligatorios", code: "E001" });
+            }
+
+            const userRole = await roleModel.getRolesById(connection, result.user_id);
+
+            const token = jwt.sign({ id: result.user_id, email, roles: userRole }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
             await accesModel.registerLogAccess(connection, result.user_id, email, req.ip, req.headers["user-agent"], "SUCCESS");
             await connection.commit();
-            res.status(200).json({ message: "Login exitoso", token });
+
+            res.cookie("access-token", token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "Strict",
+                maxAge: 2 * 60 * 60 * 1000
+            });
+
+            res.status(200).json({ message: "Login exitoso", userId: result.user_id, username: result.username });
 
         } catch (error) {
             if (connection) await connection.rollback();
@@ -97,7 +115,7 @@ module.exports = {
             await connection.beginTransaction();
 
             const result = await userModel.updateUser(connection, userId, username, email, phone, first_name, last_name, dni);
-            console.log("result", result);
+
             await connection.commit();
             res.status(200).json({ message: 'Usuario actualizado con éxito' });
 
@@ -130,6 +148,33 @@ module.exports = {
         } finally {
             if (connection) connection.release();
         }
+    },
+
+    getUserInfo: async (req, res) => {
+        let connection;
+        try {
+            const { id } = req.user
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            const result = await userModel.getUsXerById(connection, id);
+            await connection.commit();
+            res.status(200).json(result);
+
+        } catch (error) {
+            if (connection) await connection.rollback();
+            console.error("Error al encontrar usuario:", error);
+            res.status(500).json({ message: "Error en el servidor", error: error.message });
+        } finally {
+            if (connection) connection.release();
+        }
+
+    },
+
+
+    logout: async (req, res) => {
+        res.clearCookie("access-token");
+        res.json({ message: "Sesión cerrada" });
     }
 
 
