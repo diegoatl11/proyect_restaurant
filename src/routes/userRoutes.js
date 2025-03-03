@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const verifyToken = require("../middlewares/auth");
-
-
+const { verifyToken } = require("../middlewares/auth");
+const { authorizeRoles } = require("../middlewares/authorizeRoles");
 const usercontroller = require("../controllers/userController");
+const { ROLES } = require("../utils/roles")
 
-router.post("/authentication/register", usercontroller.create);
+router.post("/authentication/register", verifyToken, authorizeRoles(ROLES.ADMIN), usercontroller.create);
 
 router.post("/authentication/login", usercontroller.login);
 

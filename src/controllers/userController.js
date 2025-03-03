@@ -69,8 +69,6 @@ module.exports = {
                 return res.status(401).json({ message: "Credenciales incorrectas. Inténtalo de nuevo.", code: "E002" });
             }
 
-
-
             if (!email || !password) {
                 return res.status(400).json({ message: "Correo y contraseña son obligatorios", code: "E001" });
             }
@@ -89,7 +87,7 @@ module.exports = {
                 maxAge: 2 * 60 * 60 * 1000
             });
 
-            res.status(200).json({ message: "Login exitoso", userId: result.user_id, username: result.username });
+            res.status(200).json({ message: "Login exitoso", userId: result.user_id, username: result.username, roles: userRole });
 
         } catch (error) {
             if (connection) await connection.rollback();
@@ -157,7 +155,7 @@ module.exports = {
             connection = await db.getConnection();
             await connection.beginTransaction();
 
-            const result = await userModel.getUsXerById(connection, id);
+            const result = await userModel.getUserById(connection, id);
             await connection.commit();
             res.status(200).json(result);
 

@@ -1,10 +1,14 @@
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
+const verifyToken = (req, res, next) => {
     const token = req.cookies["access-token"];
-
     if (!token) {
-        return res.status(401).json({ message: "Acceso denegado. Token no proporcionado.", code: "E401" });
+        return res
+            .status(401)
+            .json({
+                message: "Acceso denegado. Token no proporcionado.",
+                code: "E401",
+            });
     }
 
     try {
@@ -15,3 +19,5 @@ module.exports = (req, res, next) => {
         res.status(403).json({ message: "Token inválido." });
     }
 };
+
+module.exports = { verifyToken };
