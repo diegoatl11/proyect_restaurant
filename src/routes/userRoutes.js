@@ -15,6 +15,6 @@ router.delete("/authentication/delete/:id", verifyToken, usercontroller.delete);
 
 router.post("/logout", verifyToken, usercontroller.logout);
 
-router.get("/authentication/getuserinfo", verifyToken, usercontroller.getUserInfo);
+router.get("/authentication/getuser", verifyToken, usercontroller.getUserInfo);
 
 module.exports = router;

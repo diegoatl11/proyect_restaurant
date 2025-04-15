@@ -5,6 +5,7 @@ const roleModel = require("../models/rolesModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const db = require("../config/db");
+const rolesModel = require("../models/rolesModel");
 
 module.exports = {
     create: async (req, res, next) => {
@@ -149,15 +150,28 @@ module.exports = {
     },
 
     getUserInfo: async (req, res) => {
+        console.log("Service UserInfo");
         let connection;
         try {
-            const { id } = req.user
+            const { id } = req.user;
             connection = await db.getConnection();
             await connection.beginTransaction();
 
             const result = await userModel.getUserById(connection, id);
+            const roles = await rolesModel.getRolesById(connection, id);
+            console.log("roles: ", roles);
             await connection.commit();
-            res.status(200).json(result);
+
+            const response = {
+                success: true,
+                data: {
+                    ...result,
+                    roles: roles
+                },
+                message: "Usuario Encontrado"
+            };
+    
+            res.status(200).json(response);
 
         } catch (error) {
             if (connection) await connection.rollback();

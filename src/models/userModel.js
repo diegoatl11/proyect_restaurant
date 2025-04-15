@@ -3,7 +3,7 @@ const UserModel = {
         try {
 
             const [result] = await connection.query(
-                `CALL registerUser(?, ?, ?, ?, ?, ?, ?, @user_id); SELECT @user_id AS user_id;`,
+                `CALL REGISTER_USER(?, ?, ?, ?, ?, ?, ?, @user_id); SELECT @user_id AS user_id;`,
                 [username, email, password, phone, first_name, last_name, dni]
             );
             const userId = result[1][0].user_id;
@@ -67,7 +67,7 @@ const UserModel = {
 
             const user = rows[0]?.[0] || null;
 
-            return { success: true, data: user, message: 'Usuario Encontrado' };
+            return user;
         } catch (error) {
             throw new Error(error.sqlMessage || 'Usuario No Encontrado ');
         }
