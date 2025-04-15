@@ -150,7 +150,6 @@ module.exports = {
     },
 
     getUserInfo: async (req, res) => {
-        console.log("Service UserInfo");
         let connection;
         try {
             const { id } = req.user;
@@ -159,7 +158,6 @@ module.exports = {
 
             const result = await userModel.getUserById(connection, id);
             const roles = await rolesModel.getRolesById(connection, id);
-            console.log("roles: ", roles);
             await connection.commit();
 
             const response = {
