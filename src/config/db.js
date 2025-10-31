@@ -10,7 +10,9 @@ const pool  = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0,
     multipleStatements: true,
-    waitForConnections: true
+    waitForConnections: true,
+    allowPublicKeyRetrieval: true, 
+    ssl: false                   
 });
 
 const promisePool = pool.promise();
