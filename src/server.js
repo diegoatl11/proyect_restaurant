@@ -6,16 +6,31 @@ require("dotenv").config();
 
 const app = express();
 app.use(express.json());
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",")
+  : [];
+
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log("CORS bloqueado para:", origin);
+      callback(new Error("No permitido por CORS"));
+    }
+  },
   credentials: true
 }));
 app.use(cookieParser());
 
+
+
 db.getConnection()
-  .then(() => console.log("✅ Conectado a la base de datos"))
+  .then(() => console.log("Conectado a la base de datos"))
   .catch((err) =>
-    console.error("❌ Error en la conexión a la base de datos:", err)
+    console.error("Error en la conexión a la base de datos:", err)
   );
 
 const authUserRouter = require("./routes/userRoutes");
